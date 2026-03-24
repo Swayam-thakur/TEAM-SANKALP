@@ -1,0 +1,17 @@
+/.dart_tool/
+/.firebase/
+/.flutter-plugins
+/.flutter-plugins-dependencies
+/.idea/
+/.packages
+/.vscode/
+/build/
+/coverage/
+/functions/node_modules/
+/android/.gradle/
+/android/local.properties
+/android/app/google-services.json
+/ios/Flutter/Flutter.podspec
+/ios/Runner/GoogleService-Info.plist
+pubspec.lock
+
