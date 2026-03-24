@@ -17,5 +17,31 @@ Hackathon-ready Next.js app for:
   - Shravan Pawar
   - Sujal Gabhane
  
-## Tech Stack
-- 
+System Architecture:
+
+        ┌──────────────────────┐
+        │     Web App (React)  │
+        └──────────┬───────────┘
+                   │
+        ┌──────────▼───────────┐
+        │  Mobile App (Flutter)│
+        └──────────┬───────────┘
+                   │
+           (API Requests)
+                   │
+        ┌──────────▼───────────┐
+        │   Backend (Node.js)  │
+        │   Express Server     │
+        └──────────┬───────────┘
+                   │
+     ┌─────────────▼────────────┐
+     │        Firebase          │
+     │  - Authentication        │
+     │  - Firestore Database    │
+     │  - Cloud Messaging (FCM) │
+     └─────────────┬────────────┘
+                   │
+        ┌──────────▼───────────┐
+        │ Google Maps API      │
+        │ (Location Matching)  │
+        └──────────────────────┘
