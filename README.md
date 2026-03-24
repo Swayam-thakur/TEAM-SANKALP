@@ -6,6 +6,17 @@ Hackathon-ready Next.js app for:
 - Worker app (incoming alert accept/decline)
 - Admin dashboard (live feed)
 
+## Team Sankalp (TechKruti 2K26)
+
+- Project Title: QuickSeva - Real-Time Service Marketplace
+- Problem Statement: TGPDS-02 (RozgarSaathi)
+- Core Context: Blue-collar workers (plumbers, electricians, painters, mazdoors) need same-day digital visibility without middlemen.
+- Team Members:
+  - Swayam Thakur (Leader)
+  - Janhavi Deshmukh
+  - Shravan Pawar
+  - Sujal Gabhane
+
 ## Fast Start
 
 1. Install Node.js 20 LTS.
