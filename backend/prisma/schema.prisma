@@ -1,0 +1,347 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  WORKER
+  ADMIN
+}
+
+enum JobStatus {
+  REQUEST_PLACED
+  SEARCHING
+  ALERT_SENT
+  WORKER_ACCEPTED
+  ON_THE_WAY
+  JOB_STARTED
+  JOB_COMPLETED
+  NO_WORKER_FOUND
+  WORKER_CANCELLED
+}
+
+enum VerificationStatus {
+  PENDING
+  UNDER_REVIEW
+  VERIFIED
+  REJECTED
+}
+
+model User {
+  id              String           @id @default(uuid())
+  phone           String           @unique
+  role            UserRole
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  customerProfile CustomerProfile?
+  workerProfile   WorkerProfile?
+  supportTickets  SupportTicket[]
+  notifications   Notification[]
+}
+
+model CustomerProfile {
+  userId           String   @id
+  user             User     @relation(fields: [userId], references: [id])
+  fullName         String
+  defaultLanguage  String   @default("en")
+  defaultAddress   String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  favorites        FavoriteWorker[]
+  recurringBooking RecurringBooking[]
+}
+
+model WorkerProfile {
+  userId             String                 @id
+  user               User                   @relation(fields: [userId], references: [id])
+  displayName        String
+  bio                String?
+  experienceYears    Int                    @default(0)
+  profileScore       Int                    @default(0)
+  ratingAvg          Float                  @default(0)
+  completedJobs      Int                    @default(0)
+  isAvailableNow     Boolean                @default(false)
+  verificationLevel  Int                    @default(0)
+  city               String
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  skills             WorkerSkill[]
+  availabilitySlots  WorkerAvailabilitySlot[]
+  workRadius         WorkerWorkRadius?
+  verificationDocs   VerificationDocument[]
+  reviews            Review[]
+}
+
+model WorkerSkill {
+  id             String   @id @default(uuid())
+  workerId       String
+  categoryId     String
+  subcategoryId  String?
+  skillLevel     Int      @default(1)
+  ratePerHour    Int?
+  ratePerDay     Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  worker         WorkerProfile     @relation(fields: [workerId], references: [userId])
+  category       ServiceCategory   @relation(fields: [categoryId], references: [id])
+  subcategory    ServiceSubcategory? @relation(fields: [subcategoryId], references: [id])
+
+  @@index([workerId, categoryId])
+}
+
+model WorkerAvailabilitySlot {
+  id         String   @id @default(uuid())
+  workerId   String
+  weekday    Int
+  startTime  String
+  endTime    String
+  isActive   Boolean  @default(true)
+  worker     WorkerProfile @relation(fields: [workerId], references: [userId])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([workerId, weekday])
+}
+
+model WorkerWorkRadius {
+  workerId    String   @id
+  worker      WorkerProfile @relation(fields: [workerId], references: [userId])
+  radiusKm    Float
+  centerLat   Float
+  centerLng   Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ServiceCategory {
+  id          String    @id @default(uuid())
+  slug        String    @unique
+  nameEn      String
+  nameHi      String
+  icon        String
+  isActive    Boolean   @default(true)
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  skills      WorkerSkill[]
+  requests    JobRequest[]
+  subcategory ServiceSubcategory[]
+}
+
+model ServiceSubcategory {
+  id          String   @id @default(uuid())
+  categoryId  String
+  slug        String
+  nameEn      String
+  nameHi      String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  category    ServiceCategory @relation(fields: [categoryId], references: [id])
+  skills      WorkerSkill[]
+  requests    JobRequest[]
+
+  @@unique([categoryId, slug])
+}
+
+model JobRequest {
+  id                 String    @id @default(uuid())
+  customerId         String
+  categoryId         String
+  subcategoryId      String?
+  description        String
+  locationAddress    String
+  locationLat        Float
+  locationLng        Float
+  timingType         String
+  scheduledAt        DateTime?
+  budgetMin          Int?
+  budgetMax          Int?
+  status             JobStatus @default(REQUEST_PLACED)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  customer           User      @relation(fields: [customerId], references: [id])
+  category           ServiceCategory @relation(fields: [categoryId], references: [id])
+  subcategory        ServiceSubcategory? @relation(fields: [subcategoryId], references: [id])
+  broadcasts         JobBroadcast[]
+  booking            Booking?
+
+  @@index([status, createdAt])
+}
+
+model JobBroadcast {
+  id            String   @id @default(uuid())
+  jobRequestId  String
+  workerId      String
+  waveNo        Int
+  radiusKm      Float
+  sentAt        DateTime
+  respondedAt   DateTime?
+  response      String?
+  declineReason String?
+  jobRequest    JobRequest @relation(fields: [jobRequestId], references: [id])
+  worker        WorkerProfile @relation(fields: [workerId], references: [userId])
+
+  @@index([jobRequestId, waveNo])
+}
+
+model Booking {
+  id              String    @id @default(uuid())
+  jobRequestId    String    @unique
+  customerId      String
+  workerId        String
+  status          JobStatus @default(WORKER_ACCEPTED)
+  acceptedAt      DateTime?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  finalAmount     Int?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  jobRequest      JobRequest @relation(fields: [jobRequestId], references: [id])
+  customer        User      @relation(fields: [customerId], references: [id])
+  worker          WorkerProfile @relation(fields: [workerId], references: [userId])
+  timelineEvents  BookingTimelineEvent[]
+  reviews         Review[]
+  payments        Payment[]
+}
+
+model BookingTimelineEvent {
+  id         String   @id @default(uuid())
+  bookingId  String
+  eventType  String
+  metaJson   Json?
+  eventAt    DateTime @default(now())
+  booking    Booking  @relation(fields: [bookingId], references: [id])
+
+  @@index([bookingId, eventAt])
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  bookingId   String   @unique
+  customerId  String
+  workerId    String
+  rating      Int
+  comment     String?
+  tags        String[]
+  createdAt   DateTime @default(now())
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+  customer    User     @relation(fields: [customerId], references: [id])
+  worker      WorkerProfile @relation(fields: [workerId], references: [userId])
+  response    ReviewResponse?
+}
+
+model ReviewResponse {
+  id         String   @id @default(uuid())
+  reviewId   String   @unique
+  workerId   String
+  text       String
+  createdAt  DateTime @default(now())
+  review     Review   @relation(fields: [reviewId], references: [id])
+}
+
+model FavoriteWorker {
+  id          String   @id @default(uuid())
+  customerId  String
+  workerId    String
+  note        String?
+  createdAt   DateTime @default(now())
+  customer    CustomerProfile @relation(fields: [customerId], references: [userId])
+  worker      WorkerProfile   @relation(fields: [workerId], references: [userId])
+
+  @@unique([customerId, workerId])
+}
+
+model RecurringBooking {
+  id          String   @id @default(uuid())
+  customerId  String
+  workerId    String?
+  categoryId  String
+  cadence     String
+  budget      Int?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  customer    CustomerProfile @relation(fields: [customerId], references: [userId])
+}
+
+model Payment {
+  id                String   @id @default(uuid())
+  bookingId         String
+  provider          String
+  providerPaymentId String?
+  amount            Int
+  currency          String   @default("INR")
+  status            String
+  paidAt            DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  booking           Booking  @relation(fields: [bookingId], references: [id])
+  splits            PaymentSplit[]
+}
+
+model PaymentSplit {
+  id           String   @id @default(uuid())
+  paymentId    String
+  workerAmount Int
+  platformFee  Int
+  taxAmount    Int
+  settledAt    DateTime?
+  payment      Payment  @relation(fields: [paymentId], references: [id])
+}
+
+model Notification {
+  id           String   @id @default(uuid())
+  userId       String
+  channel      String
+  templateCode String?
+  payloadJson  Json?
+  status       String
+  sentAt       DateTime?
+  readAt       DateTime?
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model VerificationDocument {
+  id          String             @id @default(uuid())
+  workerId    String
+  docType     String
+  fileUrl     String
+  status      VerificationStatus @default(PENDING)
+  reviewNote  String?
+  reviewedBy  String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  worker      WorkerProfile      @relation(fields: [workerId], references: [userId])
+}
+
+model SupportTicket {
+  id            String   @id @default(uuid())
+  userId        String
+  bookingId     String?
+  category      String
+  priority      String   @default("MEDIUM")
+  status        String   @default("OPEN")
+  assignedAdmin String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id])
+  messages      SupportMessage[]
+}
+
+model SupportMessage {
+  id          String   @id @default(uuid())
+  ticketId    String
+  senderUser  String
+  message     String
+  attachments String[]
+  createdAt   DateTime @default(now())
+  ticket      SupportTicket @relation(fields: [ticketId], references: [id])
+}
