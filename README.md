@@ -16,25 +16,6 @@ Hackathon-ready Next.js app for:
   - Janhavi Deshmukh
   - Shravan Pawar
   - Sujal Gabhane
-
-## Fast Start
-
-1. Install Node.js 20 LTS.
-2. Run:
-   - `npm install`
-   - `npm run dev`
-3. Open [http://localhost:3000](http://localhost:3000).
-
-## Demo Routes
-
-- `/` public homepage
-- `/app/dashboard` customer app
-- `/app/request/new` create request
-- `/app/request/[requestId]/tracking` live tracking
-- `/worker/dashboard` worker view
-- `/admin/dashboard` admin operations
-
-## Detailed 4-Hour Execution Runbook
-
-See:
-- `docs/HACKATHON_RUNBOOK.md`
+ 
+## Tech Stack
+- 
